@@ -26,124 +26,47 @@
       import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
       import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
 
-      // Hatch client initialization with localStorage-based storage
-      const initHatchClient = async (useEffect, useState) => {
-          // Try to load stored state from JSON file, fallback to inline data
-          let initialStorage = {};
-          try {
-              const response = await fetch('./storedState.json');
-              initialStorage = await response.json();
-          } catch (error) {
-              console.warn('Could not load storedState.json, using inline data:', error);
-              // Fallback to inline stored state data for file:// URLs
-              initialStorage = {"pixelData":{"506,231":"#222222","710,268":"#222222","709,268":"#222222","681,183":"#222222","104,32":"#E50000","106,73":"#222222"},"lastPlace_user_2zNlUkK9z5htCIw90J9zJM7v6hE":1752956439351,"lastPlace_fJJJh5e5HKkyOBmGZzM5r":1752953953185};
+      // Кастомний useStoredState для роботи з API
+      const useStoredState = (key, defaultValue) => {
+        const [value, setValue] = useState(defaultValue);
+        // Завантаження стану з API при старті
+        useEffect(() => {
+          if (key === 'pixelData') {
+            fetch('/api/state')
+              .then(res => res.json())
+              .then(data => {
+                if (data && typeof data === 'object') setValue(data);
+              })
+              .catch(() => {});
           }
-
-          // Initialize localStorage with stored state
-          const STORAGE_PREFIX = 'hatch_component_';
-          Object.entries(initialStorage).forEach(([key, value]) => {
-              const storageKey = STORAGE_PREFIX + key;
-              if (!localStorage.getItem(storageKey)) {
-                  localStorage.setItem(storageKey, JSON.stringify(value));
-              }
-          });
-
-          // Implement useStoredState hook compatible with Hatch
-          const useStoredState = (key, defaultValue) => {
-              const storageKey = STORAGE_PREFIX + key;
-
-              // Get initial value from localStorage or use default
-              const getStoredValue = () => {
-                  try {
-                      const item = localStorage.getItem(storageKey);
-                      return item ? JSON.parse(item) : defaultValue;
-                  } catch (error) {
-                      console.warn('Error reading from localStorage:', error);
-                      return defaultValue;
-                  }
-              };
-
-              const [value, setValue] = useState(getStoredValue);
-
-              // Update localStorage when value changes
-              const setStoredValue = (newValue) => {
-                  try {
-                      const valueToStore = typeof newValue === 'function' ? newValue(value) : newValue;
-                      localStorage.setItem(storageKey, JSON.stringify(valueToStore));
-                      setValue(valueToStore);
-                  } catch (error) {
-                      console.error('Error writing to localStorage:', error);
-                  }
-              };
-
-              // Listen for storage changes from other tabs/windows
-              useEffect(() => {
-                  const handleStorageChange = (e) => {
-                      if (e.key === storageKey && e.newValue) {
-                          try {
-                              setValue(JSON.parse(e.newValue));
-                          } catch (error) {
-                              console.warn('Error parsing storage change:', error);
-                          }
-                      }
-                  };
-
-                  window.addEventListener('storage', handleStorageChange);
-                  return () => window.removeEventListener('storage', handleStorageChange);
-              }, [storageKey]);
-
-              return [value, setStoredValue];
-          };
-
-          // Set up global Hatch client interface
-          window.hatch = {
-              useStoredState,
-              // Mock implementations for other Hatch features
-              useUser: () => ({ id: 'local', name: 'Local User', color: '#4F46E5' }),
-              useCollaborators: () => [],
-              useAssets: () => [],
-              getAllItems: async () => {
-                  const items = {};
-                  for (let i = 0; i < localStorage.length; i++) {
-                      const key = localStorage.key(i);
-                      if (key && key.startsWith(STORAGE_PREFIX)) {
-                          const itemKey = key.replace(STORAGE_PREFIX, '');
-                          try {
-                              items[itemKey] = JSON.parse(localStorage.getItem(key));
-                          } catch (error) {
-                              console.warn('Error parsing stored item:', key, error);
-                          }
-                      }
-                  }
-                  return items;
-              },
-              getItem: async (key) => {
-                  try {
-                      const item = localStorage.getItem(STORAGE_PREFIX + key);
-                      return item ? JSON.parse(item) : undefined;
-                  } catch (error) {
-                      console.warn('Error getting item:', key, error);
-                      return undefined;
-                  }
-              },
-              setItem: async (key, value) => {
-                  try {
-                      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value));
-                  } catch (error) {
-                      console.error('Error setting item:', key, error);
-                  }
-              }
-          };
-
-          // Backward compatibility and global availability
-          window.useStoredState = useStoredState;
-          window.React = React;
-          window.useState = useState;
-          window.useEffect = useEffect;
+        }, [key]);
+        // Збереження стану через API
+        const setStoredValue = (newValue) => {
+          setValue(newValue);
+          if (key === 'pixelData') {
+            fetch('/api/state', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ state: newValue })
+            });
+          }
+        };
+        return [value, setStoredValue];
       };
 
-      // Initialize Hatch client
-      await initHatchClient(useEffect, useState);
+      window.hatch = {
+        useStoredState,
+        useUser: () => ({ id: 'local', name: 'Local User', color: '#4F46E5' }),
+        useCollaborators: () => [],
+        useAssets: () => [],
+        getAllItems: async () => ({}),
+        getItem: async () => undefined,
+        setItem: async () => undefined
+      };
+      window.useStoredState = useStoredState;
+      window.React = React;
+      window.useState = useState;
+      window.useEffect = useEffect;
 
       try {
           // Try to load component from external file, fallback to inline code
