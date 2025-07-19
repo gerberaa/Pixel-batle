@@ -1,30 +1,21 @@
-// <stdin>
 import React, { useState, useRef, useEffect, useCallback } from "https://esm.sh/react@18.2.0";
-var { useStoredState, useUser } = hatch;
-var CANVAS_SIZE = 250;
-var COOLDOWN_TIME = 5 * 60 * 1e3;
-var ZOOM_FACTOR = 1.2;
-var MIN_ZOOM = 0.5;
-var MAX_ZOOM = 50;
-var COLORS = [
-  "#FFFFFF",
-  "#E4E4E4",
-  "#888888",
-  "#222222",
-  "#FFA7D1",
-  "#E50000",
-  "#E59500",
-  "#A06A42",
-  "#E5D900",
-  "#94E044",
-  "#02BE01",
-  "#00D3DD",
-  "#0083C7",
-  "#0000EA",
-  "#CF6EE4",
-  "#820080"
+
+// Перевірка наявності hatch
+const { useStoredState, useUser } = typeof hatch !== 'undefined' ? hatch : { useStoredState: () => [undefined, () => {}], useUser: () => ({ id: 'local', name: 'Local User', color: '#4F46E5' }) };
+
+const CANVAS_SIZE = 250;
+const COOLDOWN_TIME = 5 * 60 * 1e3;
+const ZOOM_FACTOR = 1.2;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 50;
+const COLORS = [
+  "#FFFFFF", "#E4E4E4", "#888888", "#222222",
+  "#FFA7D1", "#E50000", "#E59500", "#A06A42",
+  "#E5D900", "#94E044", "#02BE01", "#00D3DD",
+  "#0083C7", "#0000EA", "#CF6EE4", "#820080"
 ];
-var PixelPlaceGame = () => {
+
+const PixelPlaceGame = () => {
   const user = useUser();
   const canvasRef = useRef(null);
   const [pixelData, setPixelData] = useStoredState("pixelData", {});
@@ -36,6 +27,7 @@ var PixelPlaceGame = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+
   useEffect(() => {
     const updateCooldown = () => {
       const now = Date.now();
@@ -46,6 +38,7 @@ var PixelPlaceGame = () => {
     const interval = setInterval(updateCooldown, 1e3);
     return () => clearInterval(interval);
   }, [lastPlaceTime]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -65,11 +58,7 @@ var PixelPlaceGame = () => {
     if (zoom > 1) {
       for (let x = Math.max(0, startX); x <= Math.min(CANVAS_SIZE - 1, endX); x++) {
         for (let y = Math.max(0, startY); y <= Math.min(CANVAS_SIZE - 1, endY); y++) {
-          if ((x + y) % 2 === 0) {
-            ctx.fillStyle = "#FFFFFF";
-          } else {
-            ctx.fillStyle = "#F0F0F0";
-          }
+          ctx.fillStyle = (x + y) % 2 === 0 ? "#FFFFFF" : "#F0F0F0";
           const screenX = x * zoom + panX;
           const screenY = y * zoom + panY;
           ctx.fillRect(screenX, screenY, zoom, zoom);
@@ -115,6 +104,7 @@ var PixelPlaceGame = () => {
     ctx.lineWidth = 2;
     ctx.strokeRect(panX, panY, CANVAS_SIZE * zoom, CANVAS_SIZE * zoom);
   }, [pixelData, zoom, panX, panY]);
+
   const getCanvasCoordinates = (clientX, clientY) => {
     const canvas = canvasRef.current;
     const rect = canvas.getBoundingClientRect();
@@ -122,6 +112,7 @@ var PixelPlaceGame = () => {
     const y = Math.floor((clientY - rect.top - panY) / zoom);
     return { x, y };
   };
+
   const handleCanvasClick = (e) => {
     if (isDragging) return;
     if (cooldownRemaining > 0) return;
@@ -136,11 +127,13 @@ var PixelPlaceGame = () => {
       setLastPlaceTime(Date.now());
     }
   };
+
   const handleMouseDown = (e) => {
     e.preventDefault();
     setIsDragging(false);
     setDragStart({ x: e.clientX - panX, y: e.clientY - panY });
   };
+
   const handleMouseMove = (e) => {
     if (e.buttons === 1) {
       const newPanX = e.clientX - dragStart.x;
@@ -152,12 +145,15 @@ var PixelPlaceGame = () => {
       setPanY(newPanY);
     }
   };
+
   const handleMouseUp = (e) => {
     setTimeout(() => setIsDragging(false), 50);
   };
+
   const handleContextMenu = (e) => {
     e.preventDefault();
   };
+
   const handleRightClick = (e) => {
     e.preventDefault();
     const canvas = canvasRef.current;
@@ -173,6 +169,7 @@ var PixelPlaceGame = () => {
     setPanX(newPanX);
     setPanY(newPanY);
   };
+
   const handleWheel = (e) => {
     e.preventDefault();
     const canvas = canvasRef.current;
@@ -194,11 +191,13 @@ var PixelPlaceGame = () => {
     setPanX(newPanX);
     setPanY(newPanY);
   };
+
   const formatTime = (ms) => {
     const minutes = Math.floor(ms / 6e4);
     const seconds = Math.floor(ms % 6e4 / 1e3);
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
+
   const resetView = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -209,41 +208,82 @@ var PixelPlaceGame = () => {
     setPanX(centerX - CANVAS_SIZE * zoom / 2);
     setPanY(centerY - CANVAS_SIZE * zoom / 2);
   };
-  return /* @__PURE__ */ React.createElement("div", { className: "w-full h-full flex flex-col bg-gray-100" }, /* @__PURE__ */ React.createElement("div", { className: "bg-white border-b p-4 flex items-center justify-between" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h1", { className: "text-2xl font-bold text-gray-800" }, "Pixel Place"), /* @__PURE__ */ React.createElement("p", { className: "text-sm text-gray-600" }, "250\xD7250 collaborative pixel canvas")), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-4" }, /* @__PURE__ */ React.createElement("div", { className: "text-center" }, cooldownRemaining > 0 ? /* @__PURE__ */ React.createElement("div", { className: "text-red-600" }, /* @__PURE__ */ React.createElement("div", { className: "text-xs" }, "\u041D\u0430\u0441\u0442\u0443\u043F\u043D\u0438\u0439 \u043F\u0456\u043A\u0441\u0435\u043B\u044C \u0447\u0435\u0440\u0435\u0437:"), /* @__PURE__ */ React.createElement("div", { className: "font-mono font-bold" }, formatTime(cooldownRemaining))) : /* @__PURE__ */ React.createElement("div", { className: "text-green-600 font-bold" }, "\u0413\u043E\u0442\u043E\u0432\u043E \u0434\u043E \u0440\u043E\u0437\u043C\u0456\u0449\u0435\u043D\u043D\u044F!")), /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      onClick: resetView,
-      className: "px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
-    },
-    "\u0421\u043A\u0438\u043D\u0443\u0442\u0438 \u0432\u0438\u0434"
-  ))), /* @__PURE__ */ React.createElement("div", { className: "bg-white border-b p-4" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2" }, /* @__PURE__ */ React.createElement("span", { className: "text-sm font-medium text-gray-700" }, "\u041A\u043E\u043B\u0456\u0440:"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-1" }, COLORS.map((color) => /* @__PURE__ */ React.createElement(
-    "button",
-    {
-      key: color,
-      onClick: () => setSelectedColor(color),
-      className: `w-8 h-8 border-2 rounded ${selectedColor === color ? "border-gray-800" : "border-gray-300"}`,
-      style: { backgroundColor: color },
-      title: color
-    }
-  ))), /* @__PURE__ */ React.createElement("div", { className: "ml-4 text-sm text-gray-600" }, "\u041E\u0431\u0440\u0430\u043D\u0438\u0439: ", /* @__PURE__ */ React.createElement("span", { className: "font-mono" }, selectedColor)))), /* @__PURE__ */ React.createElement("div", { className: "flex-1 relative overflow-hidden" }, /* @__PURE__ */ React.createElement(
-    "canvas",
-    {
-      ref: canvasRef,
-      className: "absolute inset-0 w-full h-full select-none",
-      onMouseDown: handleMouseDown,
-      onMouseMove: handleMouseMove,
-      onMouseUp: handleMouseUp,
-      onClick: handleCanvasClick,
-      onContextMenu: handleRightClick,
-      onWheel: handleWheel,
-      style: {
-        cursor: cooldownRemaining > 0 ? "not-allowed" : isDragging ? "grabbing" : "crosshair",
-        imageRendering: "pixelated"
-      }
-    }
-  ), /* @__PURE__ */ React.createElement("div", { className: "absolute top-4 left-4 bg-white bg-opacity-90 rounded p-2 text-xs pointer-events-none" }, /* @__PURE__ */ React.createElement("div", null, "\u041C\u0430\u0441\u0448\u0442\u0430\u0431: ", zoom.toFixed(1), "x"), /* @__PURE__ */ React.createElement("div", null, "\u041F\u043E\u0437\u0438\u0446\u0456\u044F \u043F\u043E\u043B\u044F: (", Math.round(-panX / zoom), ", ", Math.round(-panY / zoom), ")"), /* @__PURE__ */ React.createElement("div", null, "\u0412\u0438\u0434\u0438\u043C\u0430 \u043E\u0431\u043B\u0430\u0441\u0442\u044C: ", Math.round((canvasRef.current?.clientWidth || 0) / zoom), "\xD7", Math.round((canvasRef.current?.clientHeight || 0) / zoom), " \u043F\u0456\u043A\u0441\u0435\u043B\u0456\u0432")), /* @__PURE__ */ React.createElement("div", { className: "absolute bottom-4 left-4 bg-white bg-opacity-95 rounded p-3 text-sm max-w-xs shadow-lg pointer-events-none" }, /* @__PURE__ */ React.createElement("div", { className: "font-medium mb-2" }, "\u0423\u043F\u0440\u0430\u0432\u043B\u0456\u043D\u043D\u044F:"), /* @__PURE__ */ React.createElement("ul", { className: "text-xs space-y-1" }, /* @__PURE__ */ React.createElement("li", null, "\u2022 ", /* @__PURE__ */ React.createElement("strong", null, "\u041B\u0456\u0432\u0430 \u043A\u043D\u043E\u043F\u043A\u0430:"), " \u0440\u043E\u0437\u043C\u0456\u0441\u0442\u0438\u0442\u0438 \u043F\u0456\u043A\u0441\u0435\u043B\u044C"), /* @__PURE__ */ React.createElement("li", null, "\u2022 ", /* @__PURE__ */ React.createElement("strong", null, "\u041F\u0435\u0440\u0435\u0442\u044F\u0433\u0443\u0432\u0430\u043D\u043D\u044F:"), " \u043D\u0430\u0432\u0456\u0433\u0430\u0446\u0456\u044F \u043F\u043E \u043F\u043E\u043B\u044E"), /* @__PURE__ */ React.createElement("li", null, "\u2022 ", /* @__PURE__ */ React.createElement("strong", null, "\u041F\u0440\u0430\u0432\u0430 \u043A\u043D\u043E\u043F\u043A\u0430:"), " \u043F\u0440\u0438\u0431\u043B\u0438\u0436\u0435\u043D\u043D\u044F \u0434\u043E \u043A\u0443\u0440\u0441\u043E\u0440\u0443"), /* @__PURE__ */ React.createElement("li", null, "\u2022 ", /* @__PURE__ */ React.createElement("strong", null, "Shift + \u043F\u0440\u043E\u043A\u0440\u0443\u0442\u043A\u0430:"), " \u0432\u0456\u0434\u0434\u0430\u043B\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u043A\u0443\u0440\u0441\u043E\u0440\u0443"), /* @__PURE__ */ React.createElement("li", null, "\u2022 ", /* @__PURE__ */ React.createElement("strong", null, "\u041F\u0440\u043E\u043A\u0440\u0443\u0442\u043A\u0430:"), " \u0442\u043E\u0447\u043D\u0435 \u043C\u0430\u0441\u0448\u0442\u0430\u0431\u0443\u0432\u0430\u043D\u043D\u044F"), /* @__PURE__ */ React.createElement("li", null, "\u2022 \u041E\u0434\u0438\u043D \u043F\u0456\u043A\u0441\u0435\u043B\u044C \u043A\u043E\u0436\u043D\u0456 5 \u0445\u0432\u0438\u043B\u0438\u043D")))));
+
+  return (
+    React.createElement("div", { className: "w-full h-full flex flex-col bg-gray-100" },
+      React.createElement("div", { className: "bg-white border-b p-4 flex items-center justify-between" },
+        React.createElement("div", null,
+          React.createElement("h1", { className: "text-2xl font-bold text-gray-800" }, "Pixel Place"),
+          React.createElement("p", { className: "text-sm text-gray-600" }, "250×250 collaborative pixel canvas")
+        ),
+        React.createElement("div", { className: "flex items-center gap-4" },
+          React.createElement("div", { className: "text-center" },
+            cooldownRemaining > 0 ? (
+              React.createElement("div", { className: "text-red-600" },
+                React.createElement("div", { className: "text-xs" }, "Наступний піксель через:"),
+                React.createElement("div", { className: "font-mono font-bold" }, formatTime(cooldownRemaining))
+              )
+            ) : (
+              React.createElement("div", { className: "text-green-600 font-bold" }, "Готово до розміщення!")
+            )
+          ),
+          React.createElement("button", {
+            onClick: resetView,
+            className: "px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
+          }, "Скинути вид")
+        )
+      ),
+      React.createElement("div", { className: "bg-white border-b p-4" },
+        React.createElement("div", { className: "flex items-center gap-2" },
+          React.createElement("span", { className: "text-sm font-medium text-gray-700" }, "Колір:"),
+          React.createElement("div", { className: "flex gap-1" }, COLORS.map((color) =>
+            React.createElement("button", {
+              key: color,
+              onClick: () => setSelectedColor(color),
+              className: `w-8 h-8 border-2 rounded ${selectedColor === color ? "border-gray-800" : "border-gray-300"}`,
+              style: { backgroundColor: color },
+              title: color
+            })
+          )),
+          React.createElement("div", { className: "ml-4 text-sm text-gray-600" }, "Обраний: ",
+            React.createElement("span", { className: "font-mono" }, selectedColor)
+          )
+        )
+      ),
+      React.createElement("div", { className: "flex-1 relative overflow-hidden" },
+        React.createElement("canvas", {
+          ref: canvasRef,
+          className: "absolute inset-0 w-full h-full select-none",
+          onMouseDown: handleMouseDown,
+          onMouseMove: handleMouseMove,
+          onMouseUp: handleMouseUp,
+          onClick: handleCanvasClick,
+          onContextMenu: handleRightClick,
+          onWheel: handleWheel,
+          style: {
+            cursor: cooldownRemaining > 0 ? "not-allowed" : isDragging ? "grabbing" : "crosshair",
+            imageRendering: "pixelated"
+          }
+        }),
+        React.createElement("div", { className: "absolute top-4 left-4 bg-white bg-opacity-90 rounded p-2 text-xs pointer-events-none" },
+          React.createElement("div", null, "Масштаб: ", zoom.toFixed(1), "x"),
+          React.createElement("div", null, "Позиція поля: (", Math.round(-panX / zoom), ", ", Math.round(-panY / zoom), ")"),
+          React.createElement("div", null, "Видима область: ", Math.round((canvasRef.current?.clientWidth || 0) / zoom), "×", Math.round((canvasRef.current?.clientHeight || 0) / zoom), " пікселів")
+        ),
+        React.createElement("div", { className: "absolute bottom-4 left-4 bg-white bg-opacity-95 rounded p-3 text-sm max-w-xs shadow-lg pointer-events-none" },
+          React.createElement("div", { className: "font-medium mb-2" }, "Управління:"),
+          React.createElement("ul", { className: "text-xs space-y-1" },
+            React.createElement("li", null, "• ", React.createElement("strong", null, "Ліва кнопка:"), " розмістити піксель"),
+            React.createElement("li", null, "• ", React.createElement("strong", null, "Перетягування:"), " навігація по полю"),
+            React.createElement("li", null, "• ", React.createElement("strong", null, "Права кнопка:"), " приближення до курсору"),
+            React.createElement("li", null, "• ", React.createElement("strong", null, "Shift + прокрутка:"), " віддалення від курсору"),
+            React.createElement("li", null, "• ", React.createElement("strong", null, "Прокрутка:"), " точне масштабування"),
+            React.createElement("li", null, "• Один піксель кожні 5 хвилин")
+          )
+        )
+      )
+    )
+  );
 };
-var stdin_default = PixelPlaceGame;
-export {
-  stdin_default as default
-};
+
+export default PixelPlaceGame;
