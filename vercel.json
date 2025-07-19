@@ -4,6 +4,7 @@
     { "src": "server.js", "use": "@vercel/node" }
   ],
   "routes": [
+    { "src": "/(component\\.js|index\\.html|favicon\\.ico|storedState\\.json)", "dest": "/$1" },
     { "src": "/(.*)", "dest": "server.js" }
   ]
 } 
